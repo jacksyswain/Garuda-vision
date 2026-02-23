@@ -23,7 +23,11 @@ exports.register = async (req, res) => {
 
   res.status(201).json({ user, token });
 };
+exports.register = async (req, res) => {
+  console.log("REQ BODY:", req.body);  // 👈 ADD THIS
 
+  const { name, email, password } = req.body;
+}
 exports.login = async (req, res) => {
   const { email, password } = req.body;
 
