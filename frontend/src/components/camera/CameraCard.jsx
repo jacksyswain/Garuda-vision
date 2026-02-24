@@ -1,8 +1,10 @@
 import { Link } from "react-router-dom";
 import { deleteCamera } from "../../services/camera.service";
 import { Trash2, Play } from "lucide-react";
+import useStreamStatus from "../../hooks/useStreamStatus";
 
 const CameraCard = ({ camera, refresh }) => {
+  const isActive = useStreamStatus(camera.path);
   const handleDelete = async () => {
     if (window.confirm("Delete this camera?")) {
       await deleteCamera(camera._id);
@@ -22,9 +24,13 @@ const CameraCard = ({ camera, refresh }) => {
         </div>
 
         {/* Live Badge */}
-        <div className="absolute top-3 left-3 flex items-center gap-2 bg-red-600 px-3 py-1 rounded-full text-xs font-semibold shadow-lg">
-          <span className="h-2 w-2 bg-white rounded-full animate-pulse"></span>
-          LIVE
+        <div
+          className={`absolute top-3 left-3 px-3 py-1 rounded-full text-xs font-semibold shadow-lg ${isActive
+              ? "bg-red-600"
+              : "bg-gray-600"
+            }`}
+        >
+          {isActive ? "LIVE" : "OFFLINE"}
         </div>
 
         {/* Hover Overlay */}
@@ -48,7 +54,10 @@ const CameraCard = ({ camera, refresh }) => {
           </h3>
 
           {/* Status Dot */}
-          <span className="h-3 w-3 bg-green-500 rounded-full"></span>
+          <span
+            className={`h-3 w-3 rounded-full ${isActive ? "bg-green-500 animate-pulse" : "bg-red-500"
+              }`}
+          ></span>
         </div>
 
         <p className="text-gray-400 text-xs truncate">
