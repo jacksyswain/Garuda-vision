@@ -1,16 +1,45 @@
-import { useEffect, useRef } from "react";
+import { useEffect, useRef, useState } from "react";
 
-const useStream = (videoRef, path) => {
-  useEffect(() => {
-    if (!path) return;
+const useStream = (videoRef, path, isActive) => {
+  const pcRef = useRef(null);
+  const retryRef = useRef(null);
+  const [status, setStatus] = useState("idle"); // idle | connecting | live | error
 
-    const pc = new RTCPeerConnection();
+  const cleanup = () => {
+    if (pcRef.current) {
+      pcRef.current.close();
+      pcRef.current = null;
+    }
+    if (retryRef.current) {
+      clearTimeout(retryRef.current);
+      retryRef.current = null;
+    }
+  };
 
-    pc.ontrack = (event) => {
-      videoRef.current.srcObject = event.streams[0];
-    };
+  const startStream = async () => {
+    if (!isActive || !path) return;
 
-    const start = async () => {
+    try {
+      setStatus("connecting");
+
+      const pc = new RTCPeerConnection();
+      pcRef.current = pc;
+
+      pc.ontrack = (event) => {
+        videoRef.current.srcObject = event.streams[0];
+        setStatus("live");
+      };
+
+      pc.oniceconnectionstatechange = () => {
+        if (
+          pc.iceConnectionState === "failed" ||
+          pc.iceConnectionState === "disconnected"
+        ) {
+          setStatus("error");
+          reconnect();
+        }
+      };
+
       const offer = await pc.createOffer();
       await pc.setLocalDescription(offer);
 
@@ -19,23 +48,44 @@ const useStream = (videoRef, path) => {
         {
           method: "POST",
           headers: { "Content-Type": "application/sdp" },
-          body: offer.sdp
+          body: offer.sdp,
         }
       );
 
       const answer = await res.text();
+
       await pc.setRemoteDescription(
         new RTCSessionDescription({
           type: "answer",
-          sdp: answer
+          sdp: answer,
         })
       );
-    };
+    } catch (err) {
+      console.error("WebRTC error:", err);
+      setStatus("error");
+      reconnect();
+    }
+  };
 
-    start();
+  const reconnect = () => {
+    cleanup();
+    retryRef.current = setTimeout(() => {
+      startStream();
+    }, 3000);
+  };
 
-    return () => pc.close();
-  }, [path]);
+  useEffect(() => {
+    if (isActive) {
+      startStream();
+    } else {
+      cleanup();
+      setStatus("idle");
+    }
+
+    return () => cleanup();
+  }, [path, isActive]);
+
+  return status;
 };
 
 export default useStream;
