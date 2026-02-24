@@ -1,0 +1,19 @@
+logLevel: info
+
+rtsp:
+  address: :8554
+
+webrtc:
+  address: :8889
+  iceServers:
+    - urls: [stun:stun.l.google.com:19302]
+
+api:
+  address: :9997
+
+paths:
+  all:
+    readUser: viewer
+    readPass: viewerpass
+    publishUser: admin
+    publishPass: adminpass

@@ -1,0 +1,30 @@
+version: "3.9"
+
+services:
+
+  mediamtx:
+    image: bluenviron/mediamtx:latest
+    container_name: mediamtx
+    ports:
+      - "8554:8554"
+      - "8889:8889"
+      - "9997:9997"
+    volumes:
+      - ./mediamtx.yml:/mediamtx.yml
+    command: /mediamtx /mediamtx.yml
+
+  backend:
+    build: ../backend
+    container_name: stream-backend
+    ports:
+      - "5000:5000"
+    depends_on:
+      - mediamtx
+
+  frontend:
+    build: ../frontend
+    container_name: stream-frontend
+    ports:
+      - "5173:5173"
+    depends_on:
+      - backend
