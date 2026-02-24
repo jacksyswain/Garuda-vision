@@ -3,44 +3,70 @@ const { hashPassword, comparePassword } = require("../utils/hash");
 const { generateToken } = require("../services/token.service");
 
 exports.register = async (req, res) => {
-  const { name, email, password } = req.body;
+  try {
+    console.log("REQ BODY:", req.body);
 
-  const exists = await User.findOne({ email });
-  if (exists) return res.status(400).json({ message: "User exists" });
+    const { name, email, password } = req.body;
 
-  const hashed = await hashPassword(password);
+    if (!name || !email || !password) {
+      return res.status(400).json({ message: "All fields are required" });
+    }
 
-  const user = await User.create({
-    name,
-    email,
-    password: hashed
-  });
+    const exists = await User.findOne({ email });
+    if (exists) {
+      return res.status(400).json({ message: "User already exists" });
+    }
 
-  const token = generateToken({
-    id: user._id,
-    role: user.role
-  });
+    const hashed = await hashPassword(password);
 
-  res.status(201).json({ user, token });
+    const user = await User.create({
+      name,
+      email,
+      password: hashed
+    });
+
+    const token = generateToken({
+      id: user._id,
+      role: user.role
+    });
+
+    res.status(201).json({ user, token });
+
+  } catch (error) {
+    console.error("Register Error:", error);
+    res.status(500).json({ message: "Server Error" });
+  }
 };
-exports.register = async (req, res) => {
-  console.log("REQ BODY:", req.body);  // 👈 ADD THIS
 
-  const { name, email, password } = req.body;
-}
 exports.login = async (req, res) => {
-  const { email, password } = req.body;
+  try {
+    console.log("LOGIN BODY:", req.body);
 
-  const user = await User.findOne({ email });
-  if (!user) return res.status(400).json({ message: "Invalid credentials" });
+    const { email, password } = req.body;
 
-  const match = await comparePassword(password, user.password);
-  if (!match) return res.status(400).json({ message: "Invalid credentials" });
+    if (!email || !password) {
+      return res.status(400).json({ message: "All fields are required" });
+    }
 
-  const token = generateToken({
-    id: user._id,
-    role: user.role
-  });
+    const user = await User.findOne({ email });
+    if (!user) {
+      return res.status(400).json({ message: "Invalid credentials" });
+    }
 
-  res.json({ user, token });
+    const match = await comparePassword(password, user.password);
+    if (!match) {
+      return res.status(400).json({ message: "Invalid credentials" });
+    }
+
+    const token = generateToken({
+      id: user._id,
+      role: user.role
+    });
+
+    res.json({ user, token });
+
+  } catch (error) {
+    console.error("Login Error:", error);
+    res.status(500).json({ message: "Server Error" });
+  }
 };
