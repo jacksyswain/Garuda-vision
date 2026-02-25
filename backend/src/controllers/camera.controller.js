@@ -25,6 +25,10 @@ exports.createCamera = async (req, res) => {
       .toLowerCase()
       .replace(/\s+/g, "-") + "-" + Date.now();
 
+    // 1️⃣ Create path in MediaMTX dynamically
+    await mediamtxService.createPath(path, rtspUrl);
+
+    // 2️⃣ Save in DB
     const camera = await Camera.create({
       name,
       rtspUrl,
@@ -35,7 +39,8 @@ exports.createCamera = async (req, res) => {
     res.status(201).json(camera);
 
   } catch (err) {
-    res.status(500).json({ message: "Error creating camera" });
+    console.error("Create camera error:", err);
+    res.status(500).json({ message: "Failed to create camera" });
   }
 };
 exports.deleteCamera = async (req, res) => {
