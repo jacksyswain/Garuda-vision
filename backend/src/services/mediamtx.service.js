@@ -1,19 +1,27 @@
-const Camera = require("../models/Camera");
+const axios = require("axios");
 
-exports.createCamera = async (data) => {
-  return await Camera.create(data);
-};
+const API_BASE = "http://localhost:9997";
 
-exports.getUserCameras = async (userId) => {
-  return await Camera.find({ owner: userId });
-};
+exports.createPath = async (pathName, rtspUrl) => {
+  try {
+    await axios.post(`${API_BASE}/v3/config/set`, {
+      paths: {
+        [pathName]: {
+          source: rtspUrl,
+          sourceOnDemand: true
+        }
+      }
+    });
 
-exports.deleteCamera = async (cameraId, userId) => {
-  const camera = await Camera.findById(cameraId);
+    console.log("Path created in MediaMTX:", pathName);
 
-  if (!camera || camera.owner.toString() !== userId) {
-    throw new Error("Camera not found");
+  } catch (err) {
+    console.error("MediaMTX path creation error:", err.message);
+    throw err;
   }
+};
 
-  await camera.deleteOne();
+exports.getPaths = async () => {
+  const res = await axios.get(`${API_BASE}/v3/paths/list`);
+  return res.data;
 };
