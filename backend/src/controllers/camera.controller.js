@@ -17,7 +17,27 @@ exports.getCameras = async (req, res) => {
   const cameras = await cameraService.getUserCameras(req.user.id);
   res.json(cameras);
 };
+exports.createCamera = async (req, res) => {
+  try {
+    const { name, rtspUrl } = req.body;
 
+    const path = name
+      .toLowerCase()
+      .replace(/\s+/g, "-") + "-" + Date.now();
+
+    const camera = await Camera.create({
+      name,
+      rtspUrl,
+      path,
+      user: req.user.id
+    });
+
+    res.status(201).json(camera);
+
+  } catch (err) {
+    res.status(500).json({ message: "Error creating camera" });
+  }
+};
 exports.deleteCamera = async (req, res) => {
   await cameraService.deleteCamera(req.params.id, req.user.id);
   res.json({ message: "Camera deleted" });
